@@ -3,8 +3,11 @@ package com.barberia.repositories;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
+import com.barberia.dtos.ResponseDTO;
+import com.barberia.dtos.UsuarioDTO;
 import com.barberia.entities.Usuario;
 
 /**
@@ -27,5 +30,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer>{
 	Optional<Usuario> findById(Integer id);
 	
 	long countUserById(Integer id);
+	
+	Optional<Usuario> findByUsuario(String usuario);
+	
+	Optional<Usuario> findByUsuarioAndContrasena(String usuario, String contrasena);
+
 	
 }

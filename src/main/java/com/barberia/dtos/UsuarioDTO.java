@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 public class UsuarioDTO {
 
 	private Integer id;
+	private String usuario;
 	private String contrasena;
 	private Boolean estado;
 }

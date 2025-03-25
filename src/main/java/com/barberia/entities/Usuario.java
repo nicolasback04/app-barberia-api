@@ -52,6 +52,10 @@ public class Usuario implements Serializable {
 	private Integer id;
 	
 	@Basic(optional = false)
+	@Column(name = "usuario")
+	private String usuario;
+	
+	@Basic(optional = false)
 	@Column(name = "contrasena")
 	private String contrasena;
 	

@@ -119,4 +119,18 @@ public class UsuarioController {
 	public ResponseEntity<ResponseDTO> actualizarUsuario(@PathVariable Integer id, @RequestBody UsuarioDTO usuarioDTO) {
 		return this.usuarioService.actualizarUsuario(id, usuarioDTO);
 	}
+	
+	@Operation(summary = "Operación que permite autenticar el usuario ")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Se realizo la autenticación exitosamente", content = {
+			@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class)) }),
+			@ApiResponse(responseCode = "400", description = "La petición no puede ser entendida por el servidor debido a errores de sintaxis, el cliente no debe repetirla no sin antes hacer modificaciones", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class)) }),
+			@ApiResponse(responseCode = "404", description = "El recurso solicitado no puede ser encontrado", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class)) }),
+			@ApiResponse(responseCode = "500", description = "Se presento una condición inesperada que impidió completar la petición", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = ResponseDTO.class)) }), })
+	@PostMapping("/autenticar")
+	public ResponseEntity<ResponseDTO> autenticar(@RequestBody UsuarioDTO usuario) {
+		return this.usuarioService.autenticar(usuario);
+	}
 }

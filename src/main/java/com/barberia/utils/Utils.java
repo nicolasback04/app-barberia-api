@@ -59,4 +59,10 @@ public class Utils {
 
 		return response;
 	}
+	
+	public boolean esCorreoValido(String correo) {
+	    String regex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+	    return correo != null && correo.matches(regex);
+	}
+
 }

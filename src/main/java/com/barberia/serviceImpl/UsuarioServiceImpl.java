@@ -1,20 +1,33 @@
 package com.barberia.serviceImpl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.barberia.config.JwtTokenUtil;
 import com.barberia.dtos.ResponseDTO;
 import com.barberia.dtos.UsuarioDTO;
 import com.barberia.entities.Usuario;
+import com.barberia.exceptions.AppException;
 import com.barberia.maps.generales.UsuarioMapper;
 import com.barberia.repositories.UsuarioRepository;
 import com.barberia.service.IUsuarioService;
 import com.barberia.utils.Constants;
+import com.barberia.utils.EncriptarDesancriptar;
 import com.barberia.utils.Utils;
 
 import lombok.RequiredArgsConstructor;
@@ -30,9 +43,13 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UsuarioServiceImpl implements IUsuarioService {
+public class UsuarioServiceImpl implements UserDetailsService, IUsuarioService {
 
 	private final UsuarioRepository usuarioRepository;
+	private final EncriptarDesancriptar serviceEncriptacion;
+	private final EncriptarDesancriptar encriptarDesancriptar;
+	private final JwtTokenUtil jwtTokenUtil;
+	private final Utils util;
 	
 	/**
 	 * Método que permite obtener todos los ususarios .
@@ -82,7 +99,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
 	    System.out.println("guardar usuario -> " + usuarioDTO);
 
 	    Usuario usuario = UsuarioMapper.INSTANCE.dtoToEntity(usuarioDTO);
-
+	    
 	    if (usuario.getContrasena() == null || usuario.getEstado() == null) {
 	        ResponseDTO responseDTO = ResponseDTO.builder()
 	                .statusCode(HttpStatus.BAD_REQUEST.value())
@@ -92,6 +109,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
 	                .build();
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDTO);
 	    }
+	    usuario.setContrasena(encriptarDesancriptar.encriptar(usuario.getContrasena()));
 
 	    usuario = this.usuarioRepository.save(usuario);
 
@@ -138,5 +156,46 @@ public class UsuarioServiceImpl implements IUsuarioService {
 					.message("Usuario no encontrado para el Id: " + id).objectResponse(null).count(0L).build();
 		}
 		return ResponseEntity.status(responseDTO.getStatusCode()).body(responseDTO);
+	}
+	
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		log.info("entra user1 {}",username);
+		Optional<Usuario> usuario = this.usuarioRepository.findByUsuario(username);
+		log.info("entra user2 {}", usuario);
+		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+		log.info("entra user3 {}", passwordEncoder);
+		String hashedPassword = passwordEncoder.encode(this.serviceEncriptacion.desencriptar(usuario.get().getContrasena()));
+		log.info("entra user4 {}", hashedPassword);
+		return new User(username, hashedPassword, new ArrayList<>());
+	}
+	
+	@Override
+	public ResponseEntity<ResponseDTO> autenticar(UsuarioDTO usuarioDTO) {
+		log.info("Inicio método autenticarUsuario: {}", usuarioDTO.getUsuario());
+		log.info("Inicio método encriptada: {}", encriptarDesancriptar.encriptar(usuarioDTO.getContrasena()));
+		
+		Optional<Usuario> usuarioOpt = this.usuarioRepository.findByUsuarioAndContrasena(usuarioDTO.getUsuario(),encriptarDesancriptar.encriptar(usuarioDTO.getContrasena()));
+		log.info("Inicio método usuarioOpt: {}", usuarioOpt);
+		if (!usuarioOpt.isPresent()) {
+		    throw new AppException(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos");
+		}
+
+	    log.info("Antes de entrar al token ");
+	    final String token = jwtTokenUtil.generateToken(usuarioDTO.getUsuario());
+	    log.info("Autenticación exitosa para usuario token: {}", token);
+
+	    Map<String, String> respuesta = new HashMap<>();
+	    respuesta.put("access_token", token);
+
+	    log.info("Autenticación exitosa para usuario: {}", usuarioDTO.getUsuario());
+
+	    return ResponseEntity.ok(
+	        ResponseDTO.builder()
+	            .statusCode(HttpStatus.OK.value())
+	            .message("Autenticación exitosa")
+	            .objectResponse(respuesta)
+	            .build()
+	    );
 	}
 }

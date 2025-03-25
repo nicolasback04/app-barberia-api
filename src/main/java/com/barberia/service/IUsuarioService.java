@@ -26,4 +26,6 @@ public interface IUsuarioService {
 	public ResponseEntity<ResponseDTO> eliminarUsuario(final Integer id);
 	
 	public ResponseEntity<ResponseDTO> actualizarUsuario(Integer id, UsuarioDTO usuarioDTO);
+	
+	ResponseEntity<ResponseDTO> autenticar(UsuarioDTO usuarioDTO);
 }
